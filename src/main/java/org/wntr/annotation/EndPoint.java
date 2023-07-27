@@ -11,8 +11,10 @@ public @interface EndPoint {
     String type() default "get";
 
     boolean needRC() default false;
-    String mappingPath();
 
+    String redirectPath() default "";
+
+    String mappingPath();
 
 
 }

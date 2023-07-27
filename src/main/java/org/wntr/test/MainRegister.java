@@ -1,18 +1,18 @@
 package org.wntr.test;
 
-import io.vertx.core.http.HttpConnection;
 import io.vertx.ext.web.RoutingContext;
 import org.wntr.annotation.EndPoint;
 import org.wntr.annotation.Register;
 import org.wntr.annotation.RequiredParam;
 
 @Register
-public class Test {
+public class MainRegister {
+
 
     @EndPoint(mappingPath = "/home/test", type = "get", needRC = true)
     public void test(RoutingContext rc) {
         System.out.println(rc.queryParam("username"));
-        rc.response().end("sdssdsd");
+        rc.response().end("test success");
     }
 
     @EndPoint(mappingPath = "/get")
@@ -25,6 +25,11 @@ public class Test {
 
     @EndPoint(mappingPath = "/get2")
     public String get2(String username, String age) {
-        return "S";
+        return "get2";
     }
+
+    @EndPoint(mappingPath = "/redirect", redirectPath = "/get2")
+    public void redirect() {
+    }
+
 }

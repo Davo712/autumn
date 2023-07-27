@@ -28,19 +28,24 @@ public class MainVerticle extends AbstractVerticle {
                 String mappingPath = method.getAnnotation(EndPoint.class).mappingPath();
                 String type = method.getAnnotation(EndPoint.class).type();
                 Boolean needRC = method.getAnnotation(EndPoint.class).needRC();
+                String redirectPath = method.getAnnotation(EndPoint.class).redirectPath();
                 Class<?> clazz = method.getDeclaringClass();
                 if (type.equals("post")) {
-                    addPostHandler(mappingPath, method, clazz, needRC);
+                    addPostHandler(mappingPath, method, clazz, needRC, redirectPath);
                 } else {
-                    addGetHandler(mappingPath, method, clazz, needRC);
+                    addGetHandler(mappingPath, method, clazz, needRC, redirectPath);
                 }
             }
         });
     }
 
 
-    public void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC) {
+    public void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.get(path).handler(rc -> {
+            if (!redirectPath.equals("")) {
+                rc.reroute(redirectPath);
+                return;
+            }
             try {
                 Parameter[] parameters = method.getParameters();
 
@@ -66,8 +71,12 @@ public class MainVerticle extends AbstractVerticle {
         System.out.println("Register GET end-point: " + path);
     }
 
-    public void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC) {
+    public void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.post(path).handler(rc -> {
+            if (!redirectPath.equals("")) {
+                rc.reroute(redirectPath);
+                return;
+            }
             try {
                 Parameter[] parameters = method.getParameters();
 
