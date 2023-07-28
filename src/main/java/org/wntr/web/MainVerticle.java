@@ -83,9 +83,9 @@ public class MainVerticle extends AbstractVerticle {
                 String[] paramValues = new String[paramNames.length];
                 for (int i = 0; i < parameters.length; i++) {
                     paramNames[i] = parameters[i].getName();
-                    if (parameters[i].getAnnotation(GetParamJWT.class) != null) {
+                    if ((needJWT)&&(parameters[i].getAnnotation(GetParamJWT.class) != null)) {
                         paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
-                    } else if (parameters[i].getAnnotation(GetTokenJWT.class) != null) {
+                    } else if ((needJWT)&&(parameters[i].getAnnotation(GetTokenJWT.class) != null)) {
                         paramValues[i] = rc.request().getHeader("Authorization");
                     } else {
                         paramValues[i] = rc.queryParam(paramNames[i]).toString();
@@ -132,7 +132,9 @@ public class MainVerticle extends AbstractVerticle {
                 String[] paramValues = new String[paramNames.length];
                 for (int i = 0; i < parameters.length; i++) {
                     paramNames[i] = parameters[i].getName();
-                    if (parameters[i].getAnnotation(GetParamJWT.class) != null) {
+                    if ((needJWT)&&(parameters[i].getAnnotation(GetParamJWT.class) != null)) {
+                        paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
+                    } else if ((needJWT)&&(parameters[i].getAnnotation(GetTokenJWT.class) != null)) {
                         paramValues[i] = rc.request().getHeader("Authorization");
                     } else {
                         paramValues[i] = rc.queryParam(paramNames[i]).toString();

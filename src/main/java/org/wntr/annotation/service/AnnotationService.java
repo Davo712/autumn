@@ -1,12 +1,10 @@
 package org.wntr.annotation.service;
 
 import org.reflections.Reflections;
-import org.reflections.scanners.Scanner;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ConfigurationBuilder;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.util.Set;
 
 public class AnnotationService {
