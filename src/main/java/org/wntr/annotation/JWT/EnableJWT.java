@@ -9,4 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface EnableJWT {
     String secretKey() default "first";
+    int timeoutHours() default 3600;
 }

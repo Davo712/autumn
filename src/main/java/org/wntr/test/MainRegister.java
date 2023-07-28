@@ -20,7 +20,7 @@ import java.util.Map;
  */
 
 @Register
-@EnableJWT(secretKey = "MySecretKey")
+@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)
 public class MainRegister {
 
 

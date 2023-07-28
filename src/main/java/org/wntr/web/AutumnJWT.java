@@ -6,12 +6,18 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class AutumnJWT {
 
 
     static String SECRET_KEY = "first";
+    static int timeoutHours = 3600;
 
 
     private static Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
@@ -19,7 +25,10 @@ public class AutumnJWT {
             .build();
 
     public static String createJWT(Map map) {
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
+        calendar.add(Calendar.HOUR, timeoutHours);
         return JWT.create()
+                .withExpiresAt(calendar.getTime().toInstant())
                 .withKeyId(SECRET_KEY)
                 .withClaim("parameters", map)
                 .sign(algorithm);
@@ -28,7 +37,9 @@ public class AutumnJWT {
     public static boolean checkJWT(String jwtToken) {
         try {
             DecodedJWT decodedJWT = verifier.verify(jwtToken);
-            Claim claim = decodedJWT.getClaim("parameters");
+            if (decodedJWT.getExpiresAtAsInstant().isBefore(Instant.now())) {
+                return false;
+            }
             return true;
         } catch (Exception e) {
             e.printStackTrace();

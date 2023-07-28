@@ -33,6 +33,7 @@ public class MainVerticle extends AbstractVerticle {
             Set<Class> classes = AnnotationService.getAnnotatedClasses(EnableJWT.class);
             classes.forEach(c -> {
                 try {
+                    AutumnJWT.timeoutHours = c.getConstructor().newInstance().getClass().getAnnotation(EnableJWT.class).timeoutHours();
                     AutumnJWT.SECRET_KEY = c.getConstructor().newInstance().getClass().getAnnotation(EnableJWT.class).secretKey();
                 } catch (Exception e) {
                     e.printStackTrace();
