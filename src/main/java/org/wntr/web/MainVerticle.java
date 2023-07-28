@@ -4,14 +4,19 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
-import org.wntr.annotation.EndPoint;
-import org.wntr.annotation.Register;
-import org.wntr.annotation.RequiredParam;
+import org.wntr.annotation.JWT.EnableJWT;
+import org.wntr.annotation.JWT.GetParamJWT;
+import org.wntr.annotation.JWT.GetTokenJWT;
+import org.wntr.annotation.JWT.NoJWT;
 import org.wntr.annotation.service.AnnotationService;
+import org.wntr.annotation.web.EndPoint;
+import org.wntr.annotation.web.Register;
+import org.wntr.annotation.web.RequiredParam;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Set;
+
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -21,7 +26,20 @@ public class MainVerticle extends AbstractVerticle {
     int port = 8080;
     String host = "localhost";
 
+    boolean needJWT = !AnnotationService.getAnnotatedClasses(EnableJWT.class).isEmpty();
+
     public void addHandler() {
+        if (needJWT) {
+            Set<Class> classes = AnnotationService.getAnnotatedClasses(EnableJWT.class);
+            classes.forEach(c -> {
+                try {
+                    AutumnJWT.SECRET_KEY = c.getConstructor().newInstance().getClass().getAnnotation(EnableJWT.class).secretKey();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+
         Set<Method> annotatedMethods = AnnotationService.getAnnotatedMethods(EndPoint.class);
         annotatedMethods.forEach(method -> {
             if (method.getDeclaringClass().isAnnotationPresent(Register.class)) {
@@ -42,6 +60,18 @@ public class MainVerticle extends AbstractVerticle {
 
     public void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.get(path).handler(rc -> {
+            if (needJWT) {
+                if (!method.isAnnotationPresent(NoJWT.class)) {
+                    if (rc.request().getHeader("Authorization") == null) {
+                        rc.response().end("JWT token missing");
+                        return;
+                    }
+                    if (!AutumnJWT.checkJWT(rc.request().getHeader("authorization"))) {
+                        rc.response().end("Invalid JWT token");
+                        return;
+                    }
+                }
+            }
             if (!redirectPath.equals("")) {
                 rc.reroute(redirectPath);
                 return;
@@ -53,16 +83,22 @@ public class MainVerticle extends AbstractVerticle {
                 String[] paramValues = new String[paramNames.length];
                 for (int i = 0; i < parameters.length; i++) {
                     paramNames[i] = parameters[i].getName();
-                    paramValues[i] = rc.queryParam(paramNames[i]).toString();
-                    paramValues[i] = paramValues[i].substring(1, paramValues[i].length() - 1);
-                    if ((parameters[i].getAnnotation(RequiredParam.class) != null)&&(paramValues[i].equals(""))) {
+                    if (parameters[i].getAnnotation(GetParamJWT.class) != null) {
+                        paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
+                    } else if (parameters[i].getAnnotation(GetTokenJWT.class) != null) {
+                        paramValues[i] = rc.request().getHeader("Authorization");
+                    } else {
+                        paramValues[i] = rc.queryParam(paramNames[i]).toString();
+                        paramValues[i] = paramValues[i].substring(1, paramValues[i].length() - 1);
+                    }
+                    if ((parameters[i].getAnnotation(RequiredParam.class) != null) && (paramValues[i].equals(""))) {
                         return;
                     }
                 }
                 if (needRC) {
                     method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
                 } else {
-                    rc.response().end(Json.encode(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)));
+                    rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -73,6 +109,18 @@ public class MainVerticle extends AbstractVerticle {
 
     public void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.post(path).handler(rc -> {
+            if (needJWT) {
+                if (!method.isAnnotationPresent(NoJWT.class)) {
+                    if (rc.request().getHeader("Authorization") == null) {
+                        rc.response().end("JWT token missing");
+                        return;
+                    }
+                    if (!AutumnJWT.checkJWT(rc.request().getHeader("authorization"))) {
+                        rc.response().end("Invalid JWT token");
+                        return;
+                    }
+                }
+            }
             if (!redirectPath.equals("")) {
                 rc.reroute(redirectPath);
                 return;
@@ -84,16 +132,20 @@ public class MainVerticle extends AbstractVerticle {
                 String[] paramValues = new String[paramNames.length];
                 for (int i = 0; i < parameters.length; i++) {
                     paramNames[i] = parameters[i].getName();
-                    paramValues[i] = rc.queryParam(paramNames[i]).toString();
-                    paramValues[i] = paramValues[i].substring(1, paramValues[i].length() - 1);
-                    if ((parameters[i].getAnnotation(RequiredParam.class) != null)&&(paramValues[i].equals(""))) {
+                    if (parameters[i].getAnnotation(GetParamJWT.class) != null) {
+                        paramValues[i] = rc.request().getHeader("Authorization");
+                    } else {
+                        paramValues[i] = rc.queryParam(paramNames[i]).toString();
+                        paramValues[i] = paramValues[i].substring(1, paramValues[i].length() - 1);
+                    }
+                    if ((parameters[i].getAnnotation(RequiredParam.class) != null) && (paramValues[i].equals(""))) {
                         return;
                     }
                 }
                 if (needRC) {
                     method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
                 } else {
-                    rc.response().end(Json.encode(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)));
+                    rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
