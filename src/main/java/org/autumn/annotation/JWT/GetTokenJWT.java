@@ -1,4 +1,4 @@
-package org.wntr.annotation.JWT;
+package org.autumn.annotation.JWT;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

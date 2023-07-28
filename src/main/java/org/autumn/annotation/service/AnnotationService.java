@@ -1,4 +1,4 @@
-package org.wntr.annotation.service;
+package org.autumn.annotation.service;
 
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;

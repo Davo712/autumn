@@ -1,4 +1,4 @@
-package org.wntr.web;
+package org.autumn.web;
 
 public interface DynamicWebApp {
 

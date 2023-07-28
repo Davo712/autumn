@@ -1,15 +1,15 @@
-package org.wntr.test;
+package org.autumn.test;
 
 import io.vertx.ext.web.RoutingContext;
-import org.wntr.annotation.JWT.EnableJWT;
-import org.wntr.annotation.JWT.GetParamJWT;
-import org.wntr.annotation.JWT.GetTokenJWT;
-import org.wntr.annotation.JWT.NoJWT;
-import org.wntr.annotation.web.EndPoint;
-import org.wntr.annotation.web.Register;
-import org.wntr.annotation.web.RequiredParam;
-import org.wntr.web.AutumnJWT;
-import org.wntr.web.Resp;
+import org.autumn.annotation.JWT.EnableJWT;
+import org.autumn.annotation.JWT.GetParamJWT;
+import org.autumn.annotation.JWT.GetTokenJWT;
+import org.autumn.annotation.JWT.NoJWT;
+import org.autumn.annotation.web.EndPoint;
+import org.autumn.annotation.web.Register;
+import org.autumn.annotation.web.RequiredParam;
+import org.autumn.web.AutumnJWT;
+import org.autumn.web.Resp;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +20,7 @@ import java.util.Map;
  */
 
 @Register
-@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)
+@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)          // need for only one any class, this annotation is global
 public class MainRegister {
 
 

@@ -1,4 +1,4 @@
-package org.wntr.test;
+package org.autumn.test;
 
 import lombok.Data;
 

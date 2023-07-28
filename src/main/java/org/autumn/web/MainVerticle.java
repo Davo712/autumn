@@ -1,17 +1,17 @@
-package org.wntr.web;
+package org.autumn.web;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.Router;
-import org.wntr.annotation.JWT.EnableJWT;
-import org.wntr.annotation.JWT.GetParamJWT;
-import org.wntr.annotation.JWT.GetTokenJWT;
-import org.wntr.annotation.JWT.NoJWT;
-import org.wntr.annotation.service.AnnotationService;
-import org.wntr.annotation.web.EndPoint;
-import org.wntr.annotation.web.Register;
-import org.wntr.annotation.web.RequiredParam;
+import org.autumn.annotation.JWT.EnableJWT;
+import org.autumn.annotation.JWT.GetParamJWT;
+import org.autumn.annotation.JWT.GetTokenJWT;
+import org.autumn.annotation.JWT.NoJWT;
+import org.autumn.annotation.service.AnnotationService;
+import org.autumn.annotation.web.EndPoint;
+import org.autumn.annotation.web.Register;
+import org.autumn.annotation.web.RequiredParam;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;

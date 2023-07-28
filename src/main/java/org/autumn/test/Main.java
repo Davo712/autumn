@@ -1,6 +1,6 @@
-package org.wntr.test;
+package org.autumn.test;
 
-import org.wntr.web.DynamicWebApp;
+import org.autumn.web.DynamicWebApp;
 
 /**
  * @version 1.0
