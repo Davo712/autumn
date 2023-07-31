@@ -1,5 +1,5 @@
 # autumn
-Web Lib For Java
+Web Lib For Java 17
 
 Please add -parameters flag in javac (if you use Intellij IDEA - Settings > Build, Execution, Deployment > Compiler > Java Compiler > Additional command line parameters).
 
