@@ -11,6 +11,8 @@ Please add -parameters flag in javac (if you use Intellij IDEA - Settings > Buil
 
 ## Usage/Examples
 
+You can see all examples in the test package.
+
 ```java
 public class Main {
     public static void main(String[] args) {
@@ -103,14 +105,14 @@ Install autumn with jitpack repo
 https://jitpack.io/#Davo712/autumn
 
 ```maven
-  <repositories>
+        <repositories>
 		<repository>
 		    <id>jitpack.io</id>
 		    <url>https://jitpack.io</url>
 		</repository>
 	</repositories>
 
-    <dependency>
+        <dependency>
 	    <groupId>com.github.Davo712</groupId>
 	    <artifactId>autumn</artifactId>
 	    <version>Version</version>
