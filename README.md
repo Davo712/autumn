@@ -85,11 +85,6 @@ public class MainRegister {
 
 
 
-## Support
-
-For support, email gevorgyandavo77@gmail.com.
-
-
 ## Libraries
 
 This project uses the following libraries:
@@ -121,4 +116,10 @@ https://jitpack.io/#Davo712/autumn
 	    <version>Version</version>
 	</dependency>
 ```
-    
+
+
+
+
+## Support
+
+For support, email gevorgyandavo77@gmail.com.
