@@ -96,6 +96,7 @@ This project uses the following libraries:
 - Reflections
 - Jackson
 - Java JWT
+- JDBI
 
 
 ## Installation
