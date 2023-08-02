@@ -8,9 +8,11 @@ import org.autumn.annotation.JWT.NoJWT;
 import org.autumn.annotation.web.EndPoint;
 import org.autumn.annotation.web.Register;
 import org.autumn.annotation.web.RequiredParam;
+import org.autumn.db.AutumnDB;
 import org.autumn.web.AutumnJWT;
 import org.autumn.web.Resp;
 
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +22,8 @@ import java.util.Map;
  */
 
 @Register
-@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)          // need for only one any class, this annotation is global
+@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)
+// need for only one any class, this annotation is global
 public class MainRegister {
 
 
@@ -63,9 +66,22 @@ public class MainRegister {
     }
 
     @EndPoint(mappingPath = "/home", type = "get", needRC = true)
-    public void home(RoutingContext rc) {
+    @NoJWT
+    public void home(RoutingContext rc) throws SQLException {
         System.out.println(rc.queryParam("username"));
-        rc.response().end("Home");
+        rc.response().sendFile("index.html");
+    }
+
+    @EndPoint(mappingPath = "/dbTest", type = "get")
+    @NoJWT
+    public Resp dbTest() {
+//        System.out.println(AutumnDB.selectSingle("select * from usr limit 1", Usr.class)); --> return Usr object
+//        System.out.println(AutumnDB.selectSingle("select * from usr limit 1"));  -- > return map
+        AutumnDB.select("select * from usr", Usr.class).forEach(usr -> {
+            System.out.println(usr);
+        });
+//        AutumnDB.execute("create table project (name varchar(50))");
+        return Resp.response("OK");
     }
 
 }
