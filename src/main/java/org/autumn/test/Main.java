@@ -13,7 +13,7 @@ public class Main {
         DynamicWebApp.setParams(8080, "localhost");
         DynamicWebApp.run();
         AutumnDB.autoCreateModel = true;
-        AutumnDB.connectToDB("autumndb", "root", ""); // only mysql TODO
+        AutumnDB.connectToDB("autumnpostgres", "postgres", "root", "postgresql");
     }
 }
 

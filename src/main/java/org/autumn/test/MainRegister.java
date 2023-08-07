@@ -67,7 +67,7 @@ public class MainRegister {
 
     @EndPoint(mappingPath = "/home", type = "get", needRC = true)
     @NoJWT
-    public void home(RoutingContext rc) throws SQLException {
+    public void home(RoutingContext rc) {
         System.out.println(rc.queryParam("username"));
         rc.response().sendFile("index.html");
     }
@@ -77,9 +77,7 @@ public class MainRegister {
     public Resp dbTest() {
 //        System.out.println(AutumnDB.selectSingle("select * from usr limit 1", Usr.class)); --> return Usr object
 //        System.out.println(AutumnDB.selectSingle("select * from usr limit 1"));  -- > return map
-        AutumnDB.select("select * from usr", Usr.class).forEach(usr -> {
-            System.out.println(usr);
-        });
+        AutumnDB.select("select * from usr", Usr.class).forEach(System.out::println);
 //        AutumnDB.execute("create table project (name varchar(50))");
         return Resp.response("OK");
     }

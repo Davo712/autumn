@@ -20,8 +20,8 @@ public class AutumnDB {
 
     static Handle handle;
 
-    public static void connectToDB(String dbName, String user, String password) {
-        Jdbi jdbi = Jdbi.create("jdbc:mysql://localhost/" + dbName, user, password);
+    public static void connectToDB(String dbName, String user, String password, String dbType) {
+        Jdbi jdbi = Jdbi.create("jdbc:" + dbType + "://localhost/" + dbName, user, password);
         handle = jdbi.open();
         System.out.println("Connected to " + dbName + " DB");
 
@@ -110,9 +110,12 @@ public class AutumnDB {
             type = "boolean";
         } else if ((c == Date.class) || (c == Timestamp.class) || (c == Instant.class)) {
             type = "date";
+        } else {
+            type = "varchar(255)";
         }
         return type;
     }
 
 
 }
+
