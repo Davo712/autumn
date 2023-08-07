@@ -83,8 +83,12 @@ public class MainRegister {
     public Resp dbTest() {
 //        System.out.println(AutumnDB.selectSingle("select * from usr limit 1", Usr.class)); --> return Usr object
 //        System.out.println(AutumnDB.selectSingle("select * from usr limit 1"));  -- > return map
-        AutumnDB.select("select * from usr", Usr.class).forEach(System.out::println);
+//        AutumnDB.select("select * from usr", Usr.class).forEach(System.out::println);
 //        AutumnDB.execute("create table project (name varchar(50))");
+        User2 user2 = new User2();
+        user2.setAge(1);
+        user2.setName("test");
+        System.out.println(AutumnDB.save(user2));
         return Resp.response("OK");
     }
 
