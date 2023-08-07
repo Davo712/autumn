@@ -72,6 +72,12 @@ public class MainRegister {
         rc.response().sendFile("index.html");
     }
 
+    @EndPoint(mappingPath = "/home2", type = "get")
+    @NoJWT
+    public String home2() {
+        return "index";
+    }
+
     @EndPoint(mappingPath = "/dbTest", type = "get")
     @NoJWT
     public Resp dbTest() {

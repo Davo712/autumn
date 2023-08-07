@@ -110,6 +110,8 @@ public class MainVerticle extends AbstractVerticle {
                 }
                 if (needRC) {
                     method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
+                } else if (method.getReturnType() == String.class) {
+                    rc.response().sendFile(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues).toString() + ".html");
                 } else {
                     rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
                 }
