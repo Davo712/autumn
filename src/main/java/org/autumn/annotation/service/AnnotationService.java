@@ -21,4 +21,9 @@ public class AnnotationService {
         return reflections.getTypesAnnotatedWith(annotation);
     }
 
+    public static Set getAnnotatedClasses(Class<? extends Annotation> annotation, String path) {
+        Reflections reflections = new Reflections(path);
+        return reflections.getTypesAnnotatedWith(annotation);
+    }
+
 }
