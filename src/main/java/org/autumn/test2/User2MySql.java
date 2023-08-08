@@ -13,7 +13,10 @@ public class User2MySql {
     @Id
     @Column(columnName = "id", notNull = true, autoIncrement = true)
     private long id;
+    @Column(columnName = "nameee", notNull = true, autoIncrement = false)
     private String name;
+    @Column(columnName = "snsn", notNull = true, length = "500",autoIncrement = false)
+    private String sn;
 
 
 

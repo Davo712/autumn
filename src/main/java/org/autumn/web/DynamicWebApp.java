@@ -1,15 +1,18 @@
 package org.autumn.web;
 
-public interface DynamicWebApp {
+public class DynamicWebApp {
 
-    MainVerticle mainVerticle = new MainVerticle();
+    static MainVerticle mainVerticle = new MainVerticle();
 
-    static void run() {
+    public DynamicWebApp() {
+    }
+
+    public void run() {
         mainVerticle.run();
         mainVerticle.addHandler();
     }
 
-    static void setParams(int port, String host) {
+    public void setParams(int port, String host) {
         mainVerticle.host = host;
         mainVerticle.port = port;
     }

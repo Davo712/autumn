@@ -10,8 +10,9 @@ import org.autumn.web.DynamicWebApp;
 
 public class Main {
     public static void main(String[] args) {
-        DynamicWebApp.setParams(8080, "localhost");
-        DynamicWebApp.run();
+        DynamicWebApp dynamicWebApp = new DynamicWebApp();
+        dynamicWebApp.setParams(8080, "localhost");
+        dynamicWebApp.run();
 
         AutumnDB autumnDB = new AutumnDB(false, true);
         autumnDB.modelsPath = "org.autumn.test";
