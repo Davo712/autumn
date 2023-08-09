@@ -86,7 +86,7 @@ public class MainVerticle extends AbstractVerticle {
                 }
             }
             if (!redirectPath.equals("")) {
-                rc.reroute(redirectPath);
+                rc.redirect(redirectPath);
                 return;
             }
             try {

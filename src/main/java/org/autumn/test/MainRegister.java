@@ -31,7 +31,7 @@ public class MainRegister {
 
     @EndPoint(mappingPath = "/login", type = "post")
     @NoJWT
-    public Resp login(@RequiredParam String username, @RequiredParam String password) {
+    public Resp login(String username, String password) {
         if (true /* user exist**/) {
             Map map = new HashMap();
             map.put("username", username);
@@ -64,6 +64,7 @@ public class MainRegister {
     }
 
     @EndPoint(mappingPath = "/redirect", redirectPath = "/login")
+    @NoJWT
     public void redirect() {
     }
 
@@ -87,10 +88,10 @@ public class MainRegister {
 //        System.out.println(AutumnDB.selectSingle("select * from usr limit 1"));  -- > return map
 //        autumnDB.select("select * from usr", Usr.class).forEach(System.out::println);
 //        autumnDB.execute("create table project (name varchar(50))");
-        User2 user2 = new User2();
-        user2.setAge(1);
-        user2.setName("test");
-        autumnDB.save(user2);
+//        User2 user2 = new User2();
+//        user2.setAge(1);
+//        user2.setName("test");
+//        autumnDB.save(user2);
 
 //        System.out.println(autumnDB.selectSingle("SELECT MAX(id), MIN(id)" +
 //                "FROM user2;"));

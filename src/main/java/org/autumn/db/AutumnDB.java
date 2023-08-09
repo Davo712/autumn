@@ -188,11 +188,11 @@ public class AutumnDB {
                         }
                         if (fieldList.get(i).isAnnotationPresent(Column.class)) {
                             sqlQuery.append(fieldList.get(i).getAnnotation(Column.class).columnName() + " "
-                                    + type + (additional.equals("") ? " (0) " : additional) + autoIncrement
+                                    + type + (additional.equals("") ? " (255) " : additional) + autoIncrement
                                     + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
                                     + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         } else {
-                            sqlQuery.append(fieldList.get(i).getName() + " " + type + " (0) " + (i == fieldList.size() - 1 ? "\n" : ",\n"));
+                            sqlQuery.append(fieldList.get(i).getName() + " " + type + " (255) " + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         }
                     }
                     sqlQuery.append("\n);");
@@ -221,7 +221,7 @@ public class AutumnDB {
                                     }
                                     if (!(columnNames.contains(field.getName()) || isContain)) {
                                         StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType()) + " ( " + ("".equals(field.getAnnotation(Column.class).length()) ? "0" : field.getAnnotation(Column.class).length() ) + " ) ;");
+                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType()) + " ( " + ("".equals(field.getAnnotation(Column.class).length()) ? "255" : field.getAnnotation(Column.class).length() ) + " ) ;");
                                         execute(alter.toString());
                                         System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
                                     }
