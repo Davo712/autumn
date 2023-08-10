@@ -106,7 +106,11 @@ public class AutumnDB {
             }
             sql1.append(fieldList.get(i).isAnnotationPresent(Column.class) ? fieldList.get(i).getAnnotation(Column.class).columnName() : fieldList.get(i).getName());
             try {
-                sql2.append("\'" + fieldList.get(i).get(obj) + "\'");
+                if ((fieldList.get(i).getType() == boolean.class)||(fieldList.get(i).getType() == Boolean.class)) {
+                    sql2.append(fieldList.get(i).get(obj));
+                } else {
+                    sql2.append("\'" + fieldList.get(i).get(obj) + "\'");
+                }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
@@ -119,9 +123,6 @@ public class AutumnDB {
             }
         }
         execute(sql1.toString() + sql2.toString());
-        if (logSQL) {
-            System.out.println(sql1.toString() + sql2.toString());
-        }
     }
 
     public int execute(String nativeQuery) {
@@ -192,7 +193,7 @@ public class AutumnDB {
                                     + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
                                     + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         } else {
-                            sqlQuery.append(fieldList.get(i).getName() + " " + type + " (255) " + (i == fieldList.size() - 1 ? "\n" : ",\n"));
+                            sqlQuery.append(fieldList.get(i).getName() + " " + type + (type.equals("varchar") ? " (255) " : " ") + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         }
                     }
                     sqlQuery.append("\n);");
@@ -221,7 +222,7 @@ public class AutumnDB {
                                     }
                                     if (!(columnNames.contains(field.getName()) || isContain)) {
                                         StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType()) + " ( " + ("".equals(field.getAnnotation(Column.class).length()) ? "255" : field.getAnnotation(Column.class).length() ) + " ) ;");
+                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType())  + (((field.getAnnotation(Column.class) == null)||("".equals(field.getAnnotation(Column.class).length()))) ? (getDBTypeSql(field.getType()).equals("varchar") ? " (255) " : " ") : " (" + field.getAnnotation(Column.class).length() + ") " ) + " ;");
                                         execute(alter.toString());
                                         System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
                                     }

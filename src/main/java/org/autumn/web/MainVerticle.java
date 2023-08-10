@@ -1,23 +1,36 @@
 package org.autumn.web;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.json.Json;
+import io.vertx.ext.sync.Sync;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 import org.autumn.annotation.JWT.EnableJWT;
 import org.autumn.annotation.JWT.GetParamJWT;
 import org.autumn.annotation.JWT.GetTokenJWT;
 import org.autumn.annotation.JWT.NoJWT;
 import org.autumn.annotation.service.AnnotationService;
+import org.autumn.annotation.web.BodyParam;
 import org.autumn.annotation.web.EndPoint;
 import org.autumn.annotation.web.Register;
 import org.autumn.annotation.web.RequiredParam;
 
+import java.awt.*;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 
 public class MainVerticle extends AbstractVerticle {
@@ -62,12 +75,12 @@ public class MainVerticle extends AbstractVerticle {
 
 
     public void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
-        router.get(path).handler(handle(method, clazz, needRC, redirectPath));
+        router.get(path).handler(BodyHandler.create()).handler(handle(method, clazz, needRC, redirectPath));
         System.out.println("Register GET end-point: " + path);
     }
 
     public void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
-        router.post(path).handler(handle(method, clazz, needRC, redirectPath));
+        router.post(path).handler(BodyHandler.create()).handler(handle(method, clazz, needRC, redirectPath));
         System.out.println("Register POST end-point: " + path);
     }
 
@@ -84,37 +97,52 @@ public class MainVerticle extends AbstractVerticle {
                         return;
                     }
                 }
-            }
+            }   // check jwt
+
             if (!redirectPath.equals("")) {
                 rc.redirect(redirectPath);
                 return;
-            }
+            } // check redirect
+
             try {
                 Parameter[] parameters = method.getParameters();
 
                 String[] paramNames = new String[parameters.length];
-                String[] paramValues = new String[paramNames.length];
+                Object[] paramValues = new Object[paramNames.length];
+
+                List<Object> bodyParams = new ArrayList<>();
+
                 for (int i = 0; i < parameters.length; i++) {
                     paramNames[i] = parameters[i].getName();
+
+                    if (parameters[i].isAnnotationPresent(BodyParam.class)) { // TODO
+                        Class type = parameters[i].getType();
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        paramValues[i] = objectMapper.readValue(rc.body().asString(), type);
+                        continue;
+                    }
+
                     if ((needJWT) && (parameters[i].getAnnotation(GetParamJWT.class) != null)) {
                         paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
                     } else if ((needJWT) && (parameters[i].getAnnotation(GetTokenJWT.class) != null)) {
                         paramValues[i] = rc.request().getHeader("Authorization");
                     } else {
                         paramValues[i] = rc.queryParam(paramNames[i]).toString();
-                        paramValues[i] = paramValues[i].substring(1, paramValues[i].length() - 1);
+                        paramValues[i] = paramValues[i].toString().substring(1, paramValues[i].toString().length() - 1);
                     }
                     if ((parameters[i].getAnnotation(RequiredParam.class) != null) && (paramValues[i].equals(""))) {
                         return;
                     }
-                }
+                } // get and set  parameters
+
                 if (needRC) {
                     method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
                 } else if (method.getReturnType() == String.class) {
                     rc.response().sendFile(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues).toString() + ".html");
                 } else {
                     rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
-                }
+                }  // check response type
+
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

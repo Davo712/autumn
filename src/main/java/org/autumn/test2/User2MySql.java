@@ -17,6 +17,11 @@ public class User2MySql {
     private String name;
     @Column(columnName = "snsn", notNull = true, length = "500",autoIncrement = false)
     private String sn;
+    private long age;
+    @Column(columnName = "age2", notNull = true, length = "23")
+    private long age2;
+    private boolean isActive;
+
 
 
 

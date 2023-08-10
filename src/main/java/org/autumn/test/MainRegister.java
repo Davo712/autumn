@@ -5,10 +5,12 @@ import org.autumn.annotation.JWT.EnableJWT;
 import org.autumn.annotation.JWT.GetParamJWT;
 import org.autumn.annotation.JWT.GetTokenJWT;
 import org.autumn.annotation.JWT.NoJWT;
+import org.autumn.annotation.web.BodyParam;
 import org.autumn.annotation.web.EndPoint;
 import org.autumn.annotation.web.Register;
 import org.autumn.annotation.web.RequiredParam;
 import org.autumn.db.AutumnDB;
+import org.autumn.testWebApp.User;
 import org.autumn.web.AutumnJWT;
 import org.autumn.web.Resp;
 
@@ -22,7 +24,6 @@ import java.util.Map;
  */
 
 @Register
-@EnableJWT(secretKey = "MySecretKey", timeoutHours = 7200)
 // need for only one any class, this annotation is global
 public class MainRegister {
 
@@ -58,8 +59,11 @@ public class MainRegister {
 
 
     @EndPoint(mappingPath = "/getJWTParams")
-    public Resp getJWTParams(@GetParamJWT String username) {
+    public Resp getJWTParams(@GetParamJWT String username, String test, @BodyParam User user, @GetTokenJWT String token) {
         System.out.println(username);
+        System.out.println(test);
+        System.out.println(user);
+        System.out.println(token);
         return Resp.response("OK");
     }
 
@@ -92,7 +96,6 @@ public class MainRegister {
 //        user2.setAge(1);
 //        user2.setName("test");
 //        autumnDB.save(user2);
-
 //        System.out.println(autumnDB.selectSingle("SELECT MAX(id), MIN(id)" +
 //                "FROM user2;"));
 
