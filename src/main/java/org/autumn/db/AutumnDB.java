@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 
 public class AutumnDB {
 
-    public boolean logSQL = false;
-    public boolean autoCreateModel = false;
+    public boolean logSQL;
+    public boolean autoCreateModel;
     static Handle handle;
     public String dbType;
 
@@ -41,9 +41,9 @@ public class AutumnDB {
         handle = jdbi.open();
         System.out.println("Connected to " + dbName + " DB");
         if (dbType.equals("mysql")) {
-            createModelsMySql();
+            new MySqlDB(this).createModels();
         } else if (dbType.equals("postgresql")) {
-            createModelsPostgreSql();
+            new PostgreSqlDB(this).createModels();
         }
     }
 
@@ -164,7 +164,7 @@ public class AutumnDB {
     }
 
 
-    private String getDBTypeSql(Class c) {
+    String getDBTypeSql(Class c) {
         String type = "";
         if (c == String.class) {
             type = "varchar";
@@ -179,182 +179,9 @@ public class AutumnDB {
         } else if ((c == long.class) || (c == Long.class)) {
             type = "bigint";
         } else {
-            type = "varchar(255)";
+            type = "varchar";
         }
         return type;
     }
-
-
-    private void createModelsMySql() {
-        if (autoCreateModel) {
-            Set<Class> classSet;
-            if ((modelsPath != null) && (!modelsPath.equals(""))) {
-                classSet = AnnotationService.getAnnotatedClasses(Model.class, modelsPath);
-            } else {
-                classSet = AnnotationService.getAnnotatedClasses(Model.class);
-            }
-            classSet.forEach(c -> {
-                try {
-                    StringBuilder sqlQuery = new StringBuilder("CREATE TABLE " + c.getSimpleName().toLowerCase() + "(\n");
-                    Field[] fields = c.getDeclaredFields();
-                    List<Field> fieldList = Arrays
-                            .stream(fields)
-                            .filter(field -> !field.isAnnotationPresent(Transient.class))
-                            .toList();
-
-                    for (int i = 0; i < fieldList.size(); i++) {
-                        String additional = "";
-                        if (fieldList.get(i).getAnnotation(Column.class) != null) {
-                            additional = " (" + fieldList.get(i).getAnnotation(Column.class).length() + ") ";
-                            if (("".equals(fieldList.get(i).getAnnotation(Column.class).length())) || fieldList.get(i).getAnnotation(Column.class) == null) {
-                                additional = "";
-                            }
-                        }
-
-                        String type = getDBTypeSql(fieldList.get(i).getType());
-                        String autoIncrement = "";
-                        if (this.dbType.equals("mysql")) {
-                            if (fieldList.get(i).getAnnotation(Column.class) != null) {
-                                if (fieldList.get(i).getAnnotation(Column.class).autoIncrement()) {
-                                    autoIncrement = " AUTO_INCREMENT PRIMARY KEY ";
-                                }
-                            }
-                        }
-                        if (fieldList.get(i).isAnnotationPresent(Column.class)) {
-                            sqlQuery.append(fieldList.get(i).getAnnotation(Column.class).columnName() + " "
-                                    + type + (additional.equals("") ? " (255) " : additional) + autoIncrement
-                                    + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
-                                    + (i == fieldList.size() - 1 ? "\n" : ",\n"));
-                        } else {
-                            sqlQuery.append(HelperDB.camelToSnake(fieldList.get(i).getName()) + " " + type + (type.equals("varchar") ? " (255) " : " ") + (i == fieldList.size() - 1 ? "\n" : ",\n"));
-                        }
-                    }
-                    sqlQuery.append("\n);");
-                    execute(sqlQuery.toString());
-                    System.out.println(sqlQuery);
-                    System.out.println("Created table " + c.getSimpleName().toLowerCase());
-                } catch (Exception e) {
-                    if (e.getMessage().contains("already exists")) {
-                        List<Map<String, Object>> map = select("SELECT column_name\n" +
-                                "FROM INFORMATION_SCHEMA.COLUMNS\n" +
-                                "WHERE TABLE_NAME = '" + c.getSimpleName().toLowerCase() + "'");
-                        List<String> columnNames = new ArrayList<>();
-                        map.forEach(m -> columnNames.add(HelperDB.snakeToCamel(m.get("column_name").toString())));
-
-
-                        Arrays
-                                .stream(c.getDeclaredFields())
-                                .filter(field -> !field.isAnnotationPresent(Transient.class))
-                                .toList()
-                                .forEach(field -> {
-                                    boolean isContain;
-                                    if (field.getAnnotation(Column.class) != null) {
-                                        isContain = columnNames.contains((field.getAnnotation(Column.class).columnName()));
-                                    } else {
-                                        isContain = false;
-                                    }
-                                    if (!(columnNames.contains(field.getName()) || isContain)) {
-                                        StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(HelperDB.camelToSnake(field.getName()) + " " + getDBTypeSql(field.getType()) + (((field.getAnnotation(Column.class) == null) || ("".equals(field.getAnnotation(Column.class).length()))) ? (getDBTypeSql(field.getType()).equals("varchar") ? " (255) " : " ") : " (" + field.getAnnotation(Column.class).length() + ") ") + " ;");
-                                        execute(alter.toString());
-                                        System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
-                                    }
-                                });
-                    } else {
-                        e.printStackTrace();
-                    }
-
-                }
-            });
-        }
-    }
-
-
-    private void createModelsPostgreSql() {
-        if (autoCreateModel) {
-            Set<Class> classSet;
-            if ((modelsPath != null) && (!modelsPath.equals(""))) {
-                classSet = AnnotationService.getAnnotatedClasses(Model.class, modelsPath);
-            } else {
-                classSet = AnnotationService.getAnnotatedClasses(Model.class);
-            }
-            classSet.forEach(c -> {
-                try {
-                    StringBuilder sqlQuery = new StringBuilder("CREATE TABLE " + c.getSimpleName().toLowerCase() + "(\n");
-                    Field[] fields = c.getDeclaredFields();
-                    List<Field> fieldList = Arrays
-                            .stream(fields)
-                            .filter(field -> !field.isAnnotationPresent(Transient.class))
-                            .toList();
-
-                    for (int i = 0; i < fieldList.size(); i++) {
-                        String additional = "";
-                        if (fieldList.get(i).getAnnotation(Column.class) != null) {
-                            additional = " (" + fieldList.get(i).getAnnotation(Column.class).length() + ") ";
-                            if (("".equals(fieldList.get(i).getAnnotation(Column.class).length())) || fieldList.get(i).getAnnotation(Column.class) == null) {
-                                additional = "";
-                            }
-                        }
-
-                        String type = getDBTypeSql(fieldList.get(i).getType());
-                        String autoIncrement = "";
-                        if (this.dbType.equals("postgresql")) {
-                            if (fieldList.get(i).getAnnotation(Column.class) != null) {
-                                if (fieldList.get(i).getAnnotation(Column.class).autoIncrement()) {
-                                    autoIncrement = " SERIAL PRIMARY KEY ";
-                                    type = "";
-                                }
-                            }
-                        }
-                        if (fieldList.get(i).isAnnotationPresent(Column.class)) {
-                            sqlQuery.append(fieldList.get(i).getAnnotation(Column.class).columnName() + " "
-                                    + type + additional + autoIncrement
-                                    + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
-                                    + (i == fieldList.size() - 1 ? "\n" : ",\n"));
-                        } else {
-                            sqlQuery.append(HelperDB.camelToSnake(fieldList.get(i).getName()) + " " + type + (i == fieldList.size() - 1 ? "\n" : ",\n"));
-                        }
-                    }
-                    sqlQuery.append("\n);");
-                    execute(sqlQuery.toString());
-                    System.out.println(sqlQuery);
-                    System.out.println("Created table " + c.getSimpleName().toLowerCase());
-                } catch (Exception e) {
-                    if (e.getMessage().contains("already exists")) {
-                        List<Map<String, Object>> map = select("SELECT column_name\n" +
-                                "FROM INFORMATION_SCHEMA.COLUMNS\n" +
-                                "WHERE TABLE_NAME = '" + c.getSimpleName().toLowerCase() + "'");
-                        List<String> columnNames = new ArrayList<>();
-                        map.forEach(m -> columnNames.add(HelperDB.snakeToCamel(m.get("column_name").toString())));
-
-
-                        Arrays
-                                .stream(c.getDeclaredFields())
-                                .filter(field -> !field.isAnnotationPresent(Transient.class))
-                                .toList()
-                                .forEach(field -> {
-                                    boolean isContain;
-                                    if (field.getAnnotation(Column.class) != null) {
-                                        isContain = columnNames.contains((field.getAnnotation(Column.class).columnName()));
-                                    } else {
-                                        isContain = false;
-                                    }
-                                    if (!(columnNames.contains(field.getName()) || isContain)) {
-                                        StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(HelperDB.camelToSnake(field.getName()) + " " + getDBTypeSql(field.getType()) + " ;");
-                                        execute(alter.toString());
-                                        System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
-                                    }
-                                });
-                    } else {
-                        e.printStackTrace();
-                    }
-
-                }
-            });
-        }
-    }
-
-
 }
 

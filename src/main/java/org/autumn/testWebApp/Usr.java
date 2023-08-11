@@ -6,6 +6,7 @@ import org.autumn.annotation.db.Id;
 import org.autumn.annotation.db.Model;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Model
 @Data
@@ -22,6 +23,7 @@ public class Usr {
     private int age;
     private boolean active;
     private Timestamp registerDate;
+    private List<Product> products;
 
 
 }

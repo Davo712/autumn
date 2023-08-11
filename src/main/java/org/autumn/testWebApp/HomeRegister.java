@@ -34,4 +34,10 @@ public class HomeRegister {
         return Resp.response(usrList);
     }
 
+    @EndPoint(mappingPath = "/getProducts")
+    public Resp getProducts(String userId) {
+        List<Product> products = autumnDB.select("select * from product where id in (select product_id from usr_product where usr_id = " + userId + ")");
+        return Resp.response(products);
+    }
+
 }

@@ -10,8 +10,8 @@ public class Main {
 
         AutumnDB autumnDB = new AutumnDB(true, true);
         autumnDB.modelsPath = "org.autumn.testWebApp";
-//        autumnDB.connectToDB("autumndb", "root", "", "mysql");
-        autumnDB.connectToDB("autumnpostgres", "postgres", "root", "postgresql");
+        autumnDB.connectToDB("autumndb", "root", "", "mysql");
+//        autumnDB.connectToDB("autumnpostgres", "postgres", "root", "postgresql");
 
         HomeRegister.autumnDB = autumnDB;
 
