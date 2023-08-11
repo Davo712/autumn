@@ -1,5 +1,5 @@
 
-# Autumn (Web Lib For Java)
+# Autumn (Web and DB Lib For Java)
 
 Supports only Java 17.
 
