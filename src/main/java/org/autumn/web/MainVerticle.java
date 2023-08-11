@@ -1,12 +1,10 @@
 package org.autumn.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vertx.core.*;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.impl.MessageImpl;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.Json;
-import io.vertx.ext.sync.Sync;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -20,17 +18,10 @@ import org.autumn.annotation.web.EndPoint;
 import org.autumn.annotation.web.Register;
 import org.autumn.annotation.web.RequiredParam;
 
-import java.awt.*;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 
 public class MainVerticle extends AbstractVerticle {
@@ -43,7 +34,20 @@ public class MainVerticle extends AbstractVerticle {
 
     boolean needJWT = !AnnotationService.getAnnotatedClasses(EnableJWT.class).isEmpty();
 
-    public void addHandler() {
+    void run() {
+        vertx.createHttpServer()
+                .requestHandler(router)
+                .listen(port, host, res -> {
+                    if (res.succeeded()) {
+                        System.out.println("Server started");
+                    } else if (res.failed()) {
+                        System.out.println("Server failed");
+                    }
+                });
+    }
+
+
+    void addHandler() {
         if (needJWT) {
             Set<Class> classes = AnnotationService.getAnnotatedClasses(EnableJWT.class);
             classes.forEach(c -> {
@@ -74,90 +78,87 @@ public class MainVerticle extends AbstractVerticle {
     }
 
 
-    public void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
+    void addGetHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.get(path).handler(BodyHandler.create()).handler(handle(method, clazz, needRC, redirectPath));
         System.out.println("Register GET end-point: " + path);
     }
 
-    public void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
+    void addPostHandler(String path, Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         router.post(path).handler(BodyHandler.create()).handler(handle(method, clazz, needRC, redirectPath));
         System.out.println("Register POST end-point: " + path);
     }
 
     private Handler<RoutingContext> handle(Method method, Class<?> clazz, Boolean needRC, String redirectPath) {
         return rc -> {
-            if (needJWT) {
-                if (!method.isAnnotationPresent(NoJWT.class)) {
-                    if (rc.request().getHeader("Authorization") == null) {
-                        rc.response().end("JWT token missing");
-                        return;
-                    }
-                    if (!AutumnJWT.checkJWT(rc.request().getHeader("authorization"))) {
-                        rc.response().end("Invalid JWT token");
-                        return;
-                    }
-                }
-            }   // check jwt
-
-            if (!redirectPath.equals("")) {
-                rc.redirect(redirectPath);
-                return;
-            } // check redirect
-
             try {
+                checkJWT(rc, method);
+                checkRedirect(rc, redirectPath);
                 Parameter[] parameters = method.getParameters();
-
                 String[] paramNames = new String[parameters.length];
                 Object[] paramValues = new Object[paramNames.length];
-
-                List<Object> bodyParams = new ArrayList<>();
-
-                for (int i = 0; i < parameters.length; i++) {
-                    paramNames[i] = parameters[i].getName();
-
-                    if (parameters[i].isAnnotationPresent(BodyParam.class)) { // TODO
-                        Class type = parameters[i].getType();
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        paramValues[i] = objectMapper.readValue(rc.body().asString(), type);
-                        continue;
-                    }
-
-                    if ((needJWT) && (parameters[i].getAnnotation(GetParamJWT.class) != null)) {
-                        paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
-                    } else if ((needJWT) && (parameters[i].getAnnotation(GetTokenJWT.class) != null)) {
-                        paramValues[i] = rc.request().getHeader("Authorization");
-                    } else {
-                        paramValues[i] = rc.queryParam(paramNames[i]).toString();
-                        paramValues[i] = paramValues[i].toString().substring(1, paramValues[i].toString().length() - 1);
-                    }
-                    if ((parameters[i].getAnnotation(RequiredParam.class) != null) && (paramValues[i].equals(""))) {
-                        return;
-                    }
-                } // get and set  parameters
-
-                if (needRC) {
-                    method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
-                } else if (method.getReturnType() == String.class) {
-                    rc.response().sendFile(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues).toString() + ".html");
-                } else {
-                    rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
-                }  // check response type
-
+                checkParameters(rc, paramNames, paramValues, parameters);
+                checkResponseType(rc, needRC, method, clazz, paramValues);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         };
     }
 
-    public void run() {
-        vertx.createHttpServer()
-                .requestHandler(router)
-                .listen(port, host, res -> {
-                    if (res.succeeded()) {
-                        System.out.println("Server started");
-                    } else if (res.failed()) {
-                        System.out.println("Server failed");
-                    }
-                });
+
+    private void checkJWT(RoutingContext rc, Method method) {
+        if (needJWT) {
+            if (!method.isAnnotationPresent(NoJWT.class)) {
+                if (rc.request().getHeader("Authorization") == null) {
+                    rc.response().end("JWT token missing");
+                    return;
+                }
+                if (!AutumnJWT.checkJWT(rc.request().getHeader("authorization"))) {
+                    rc.response().end("Invalid JWT token");
+                    return;
+                }
+            }
+        }
+    }
+
+    private void checkRedirect(RoutingContext rc, String redirectPath) {
+        if (!redirectPath.equals("")) {
+            rc.redirect(redirectPath);
+            return;
+        }
+    }
+
+    private void checkParameters(RoutingContext rc, String[] paramNames, Object[] paramValues, Parameter[] parameters) throws IOException {
+        for (int i = 0; i < parameters.length; i++) {
+            paramNames[i] = parameters[i].getName();
+
+            if (parameters[i].isAnnotationPresent(BodyParam.class)) { // TODO
+                Class type = parameters[i].getType();
+                ObjectMapper objectMapper = new ObjectMapper();
+                paramValues[i] = objectMapper.readValue(rc.body().asString(), type);
+                continue;
+            } // check request body
+
+            if ((needJWT) && (parameters[i].getAnnotation(GetParamJWT.class) != null)) {
+                paramValues[i] = AutumnJWT.getParam(paramNames[i], rc.request().getHeader("Authorization"));
+            } else if ((needJWT) && (parameters[i].getAnnotation(GetTokenJWT.class) != null)) {
+                paramValues[i] = rc.request().getHeader("Authorization");
+            } else {
+                paramValues[i] = rc.queryParam(paramNames[i]).toString();
+                paramValues[i] = paramValues[i].toString().substring(1, paramValues[i].toString().length() - 1);
+            }
+            if ((parameters[i].getAnnotation(RequiredParam.class) != null) && (paramValues[i].equals(""))) {
+                return;
+            }
+        }
+    }
+
+    private void checkResponseType(RoutingContext rc, boolean needRC, Method method, Class clazz, Object[] paramValues) throws Exception {
+        if (needRC) {
+            method.invoke(clazz.getDeclaredConstructor().newInstance(), rc);
+        } else if (method.getReturnType() == String.class) {
+            rc.response().sendFile(method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues).toString() + ".html");
+        } else {
+            rc.response().end(Json.encode(((Resp) method.invoke(clazz.getDeclaredConstructor().newInstance(), paramValues)).body));
+        }
     }
 }

@@ -5,9 +5,11 @@ import org.autumn.annotation.db.Column;
 import org.autumn.annotation.db.Id;
 import org.autumn.annotation.db.Model;
 
+import java.sql.Timestamp;
+
 @Model
 @Data
-public class User {
+public class Usr {
 
 
     @Id
@@ -18,7 +20,8 @@ public class User {
     private String username;
     private String password;
     private int age;
-    private boolean isActive;
+    private boolean active;
+    private Timestamp registerDate;
 
 
 }

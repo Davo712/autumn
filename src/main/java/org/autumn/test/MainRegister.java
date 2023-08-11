@@ -1,20 +1,16 @@
 package org.autumn.test;
 
 import io.vertx.ext.web.RoutingContext;
-import org.autumn.annotation.JWT.EnableJWT;
 import org.autumn.annotation.JWT.GetParamJWT;
 import org.autumn.annotation.JWT.GetTokenJWT;
 import org.autumn.annotation.JWT.NoJWT;
 import org.autumn.annotation.web.BodyParam;
 import org.autumn.annotation.web.EndPoint;
-import org.autumn.annotation.web.Register;
-import org.autumn.annotation.web.RequiredParam;
 import org.autumn.db.AutumnDB;
-import org.autumn.testWebApp.User;
+import org.autumn.testWebApp.Usr;
 import org.autumn.web.AutumnJWT;
 import org.autumn.web.Resp;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +19,7 @@ import java.util.Map;
  * @autor Davit Gevorgyan
  */
 
-@Register
+// @Register
 // need for only one any class, this annotation is global
 public class MainRegister {
 
@@ -59,7 +55,7 @@ public class MainRegister {
 
 
     @EndPoint(mappingPath = "/getJWTParams")
-    public Resp getJWTParams(@GetParamJWT String username, String test, @BodyParam User user, @GetTokenJWT String token) {
+    public Resp getJWTParams(@GetParamJWT String username, String test, @BodyParam Usr user, @GetTokenJWT String token) {
         System.out.println(username);
         System.out.println(test);
         System.out.println(user);

@@ -6,7 +6,7 @@ import org.autumn.annotation.web.Register;
 import org.autumn.db.AutumnDB;
 import org.autumn.web.Resp;
 
-@Register
+// @Register
 public class TestRegister {
 
     public static AutumnDB autumnDB;

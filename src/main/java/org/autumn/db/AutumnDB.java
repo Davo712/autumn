@@ -1,6 +1,10 @@
 package org.autumn.db;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import io.vertx.core.impl.HAManager;
 import org.autumn.annotation.db.Column;
 import org.autumn.annotation.db.Id;
 import org.autumn.annotation.db.Model;
@@ -15,6 +19,7 @@ import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AutumnDB {
 
@@ -55,6 +60,18 @@ public class AutumnDB {
         Query query = handle.createQuery(nativeQuery);
         Optional<Map<String, Object>> first = query.mapToMap().findFirst();
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        List<String> modifiedKeys = new ArrayList<>();
+        for (String key : first.get().keySet()) {
+            modifiedKeys.add(key);
+        }
+        for (String oldKey : modifiedKeys) {
+            String newKey = HelperDB.snakeToCamel(oldKey);
+            Object value = first.get().remove(oldKey);
+            first.get().put(newKey, value);
+        }
+
         if (logSQL) {
             System.out.println(nativeQuery);
         }
@@ -74,8 +91,21 @@ public class AutumnDB {
         Query query = handle.createQuery(nativeQuery);
         List<Map<String, Object>> results = query.mapToMap().list();
         ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
         List<T> returned = new ArrayList<>();
-        results.forEach(r -> returned.add(objectMapper.convertValue(r, c)));
+        results.forEach(r -> {
+            List<String> modifiedKeys = new ArrayList<>();
+            for (String key : r.keySet()) {
+                modifiedKeys.add(key);
+            }
+            for (String oldKey : modifiedKeys) {
+                String newKey = HelperDB.snakeToCamel(oldKey);
+                Object value = r.remove(oldKey);
+                r.put(newKey, value);
+            }
+            returned.add(objectMapper.convertValue(r, c));
+        });
         if (logSQL) {
             System.out.println(nativeQuery);
         }
@@ -99,14 +129,15 @@ public class AutumnDB {
                 .stream(fields)
                 .filter(field -> !(field.isAnnotationPresent(Transient.class) || (field.isAnnotationPresent(Id.class))))
                 .toList();
+
         for (int i = 0; i < fieldList.size(); i++) {
             fieldList.get(i).setAccessible(true);
             if (fieldList.get(i).isAnnotationPresent(Transient.class)) {
                 break;
             }
-            sql1.append(fieldList.get(i).isAnnotationPresent(Column.class) ? fieldList.get(i).getAnnotation(Column.class).columnName() : fieldList.get(i).getName());
+            sql1.append(fieldList.get(i).isAnnotationPresent(Column.class) ? HelperDB.camelToSnake(fieldList.get(i).getAnnotation(Column.class).columnName()) : HelperDB.camelToSnake(fieldList.get(i).getName()));
             try {
-                if ((fieldList.get(i).getType() == boolean.class)||(fieldList.get(i).getType() == Boolean.class)) {
+                if ((fieldList.get(i).getType() == boolean.class) || (fieldList.get(i).getType() == Boolean.class)) {
                     sql2.append(fieldList.get(i).get(obj));
                 } else {
                     sql2.append("\'" + fieldList.get(i).get(obj) + "\'");
@@ -137,13 +168,15 @@ public class AutumnDB {
         String type = "";
         if (c == String.class) {
             type = "varchar";
-        } else if (c == int.class) {
+        } else if ((c == int.class) || (c == Integer.class)) {
             type = "int";
-        } else if (c == boolean.class) {
+        } else if ((c == boolean.class) || (c == Boolean.class)) {
             type = "boolean";
-        } else if ((c == Date.class) || (c == Timestamp.class) || (c == Instant.class)) {
+        } else if (c == Date.class) {
             type = "date";
-        } else if (c == long.class) {
+        } else if (c == Timestamp.class) {
+            type = "timestamp";
+        } else if ((c == long.class) || (c == Long.class)) {
             type = "bigint";
         } else {
             type = "varchar(255)";
@@ -193,7 +226,7 @@ public class AutumnDB {
                                     + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
                                     + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         } else {
-                            sqlQuery.append(fieldList.get(i).getName() + " " + type + (type.equals("varchar") ? " (255) " : " ") + (i == fieldList.size() - 1 ? "\n" : ",\n"));
+                            sqlQuery.append(HelperDB.camelToSnake(fieldList.get(i).getName()) + " " + type + (type.equals("varchar") ? " (255) " : " ") + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         }
                     }
                     sqlQuery.append("\n);");
@@ -206,7 +239,7 @@ public class AutumnDB {
                                 "FROM INFORMATION_SCHEMA.COLUMNS\n" +
                                 "WHERE TABLE_NAME = '" + c.getSimpleName().toLowerCase() + "'");
                         List<String> columnNames = new ArrayList<>();
-                        map.forEach(m -> columnNames.add(m.get("column_name").toString()));
+                        map.forEach(m -> columnNames.add(HelperDB.snakeToCamel(m.get("column_name").toString())));
 
 
                         Arrays
@@ -222,7 +255,7 @@ public class AutumnDB {
                                     }
                                     if (!(columnNames.contains(field.getName()) || isContain)) {
                                         StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType())  + (((field.getAnnotation(Column.class) == null)||("".equals(field.getAnnotation(Column.class).length()))) ? (getDBTypeSql(field.getType()).equals("varchar") ? " (255) " : " ") : " (" + field.getAnnotation(Column.class).length() + ") " ) + " ;");
+                                        alter.append(HelperDB.camelToSnake(field.getName()) + " " + getDBTypeSql(field.getType()) + (((field.getAnnotation(Column.class) == null) || ("".equals(field.getAnnotation(Column.class).length()))) ? (getDBTypeSql(field.getType()).equals("varchar") ? " (255) " : " ") : " (" + field.getAnnotation(Column.class).length() + ") ") + " ;");
                                         execute(alter.toString());
                                         System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
                                     }
@@ -279,7 +312,7 @@ public class AutumnDB {
                                     + (fieldList.get(i).getAnnotation(Column.class).notNull() ? " NOT NULL" : "")
                                     + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         } else {
-                            sqlQuery.append(fieldList.get(i).getName() + " " + type + (i == fieldList.size() - 1 ? "\n" : ",\n"));
+                            sqlQuery.append(HelperDB.camelToSnake(fieldList.get(i).getName()) + " " + type + (i == fieldList.size() - 1 ? "\n" : ",\n"));
                         }
                     }
                     sqlQuery.append("\n);");
@@ -292,7 +325,7 @@ public class AutumnDB {
                                 "FROM INFORMATION_SCHEMA.COLUMNS\n" +
                                 "WHERE TABLE_NAME = '" + c.getSimpleName().toLowerCase() + "'");
                         List<String> columnNames = new ArrayList<>();
-                        map.forEach(m -> columnNames.add(m.get("column_name").toString()));
+                        map.forEach(m -> columnNames.add(HelperDB.snakeToCamel(m.get("column_name").toString())));
 
 
                         Arrays
@@ -308,7 +341,7 @@ public class AutumnDB {
                                     }
                                     if (!(columnNames.contains(field.getName()) || isContain)) {
                                         StringBuilder alter = new StringBuilder("ALTER TABLE " + c.getSimpleName().toLowerCase() + " ADD ");
-                                        alter.append(field.getName() + " " + getDBTypeSql(field.getType()) + " ;");
+                                        alter.append(HelperDB.camelToSnake(field.getName()) + " " + getDBTypeSql(field.getType()) + " ;");
                                         execute(alter.toString());
                                         System.out.println("Added field in " + c.getSimpleName().toLowerCase() + ", " + field.getName());
                                     }
